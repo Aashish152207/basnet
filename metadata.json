@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Nexus Gaming Top-Up",
+  "description": "A premium gaming top-up portal with admin dashboard, real-time news, and secure payment processing animations.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

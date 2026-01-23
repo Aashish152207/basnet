@@ -1,0 +1,505 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS GAMING | Elite Top-Up Portal</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --neon-purple: #a855f7; --neon-cyan: #22d3ee; }
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; scroll-behavior: smooth; }
+        .font-gaming { font-family: 'Orbitron', sans-serif; }
+        
+        /* Premium Glass UI */
+        .glass-card { 
+            background: rgba(15, 23, 42, 0.7); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6); 
+        }
+        
+        /* Animated Backgrounds */
+        .animate-gradient { 
+            background: linear-gradient(-45deg, #a855f7, #22d3ee, #6366f1, #a855f7); 
+            background-size: 400% 400%; 
+            animation: grad 15s ease infinite; 
+        }
+        @keyframes grad { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        /* Smooth Page Transitions */
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* UI Components */
+        .btn-premium { 
+            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .btn-premium:hover { transform: translateY(-3px); box-shadow: 0 10px 30px -10px rgba(168, 85, 247, 0.8); }
+        .btn-premium:active { transform: scale(0.95); }
+
+        input, textarea { 
+            background: rgba(15, 23, 42, 0.9) !important; 
+            border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+            color: white !important; 
+            transition: all 0.3s;
+        }
+        input:focus { border-color: var(--neon-cyan) !important; box-shadow: 0 0 15px rgba(34, 211, 238, 0.3); outline: none; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--neon-cyan);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="selection:bg-cyan-500/30">
+
+    <!-- Global Background Decor -->
+    <div class="fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-900/10 blur-[150px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-cyan-900/10 blur-[150px] rounded-full"></div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-card">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="showView('landing')">
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-cyan-400 rounded-xl flex items-center justify-center font-gaming font-black text-white text-xl shadow-lg group-hover:rotate-12 transition-transform">N</div>
+                <span class="font-gaming text-xl md:text-2xl font-black tracking-tighter uppercase">Nexus<span class="text-cyan-400">Gaming</span></span>
+            </div>
+            <div id="nav-actions" class="flex items-center space-x-6">
+                <!-- Dynamic Nav content -->
+                <button onclick="scrollToLogin()" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-gaming text-[10px] font-bold tracking-widest rounded-full shadow-lg transition-all">LOGIN</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-24 min-h-screen">
+        
+        <!-- SECTION: Landing (Home) -->
+        <section id="view-landing" class="view-section active">
+            <div class="h-[70vh] flex flex-col items-center justify-center text-center px-6">
+                <div class="inline-block px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-widest mb-8">Trusted by Global Gamers</div>
+                <h1 class="font-gaming text-5xl md:text-8xl font-black mb-6 leading-none tracking-tighter uppercase">
+                    Unleash Your<br><span class="bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent animate-gradient">Gaming Power</span>
+                </h1>
+                <p class="text-slate-400 max-w-2xl mb-12 text-sm md:text-base leading-relaxed">The ultimate destination for rapid diamond delivery. Secure transactions, exclusive bonuses, and elite support at your fingertips.</p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="scrollToLogin()" class="px-12 py-5 btn-premium text-white font-gaming font-bold rounded-2xl tracking-widest shadow-2xl">START TOP-UP</button>
+                    <button class="px-12 py-5 glass-card text-white font-gaming font-bold rounded-2xl tracking-widest hover:border-cyan-500/50 transition-all">VIEW OFFERS</button>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-6 py-24">
+                <div class="flex items-center mb-16">
+                    <h2 class="font-gaming text-3xl font-bold uppercase italic">Latest Intel</h2>
+                    <div class="h-px bg-slate-800 flex-grow ml-8"></div>
+                </div>
+                <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    <!-- News Feed -->
+                </div>
+            </div>
+
+            <!-- Auth Section -->
+            <div id="login-section" class="py-24 bg-slate-900/20 border-y border-slate-800/50">
+                <div class="max-w-md mx-auto px-6">
+                    <div class="glass-card p-12 rounded-[3rem] relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-cyan-400"></div>
+                        <h2 class="font-gaming text-3xl font-bold text-center mb-10 tracking-tight">ACCESS HUB</h2>
+                        
+                        <div class="flex bg-slate-900/80 p-1.5 rounded-2xl mb-10 border border-slate-800">
+                            <button onclick="switchRole('customer')" id="btn-role-cust" class="flex-1 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-cyan-600 text-white shadow-lg transition-all">Customer</button>
+                            <button onclick="switchRole('admin')" id="btn-role-admin" class="flex-1 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-all">Admin</button>
+                        </div>
+
+                        <form id="form-login" class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Identity Tag</label>
+                                <input type="text" id="input-username" required class="w-full px-6 py-4 rounded-2xl text-sm" placeholder="Enter Username/Email">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Security Key</label>
+                                <input type="password" id="input-password" required class="w-full px-6 py-4 rounded-2xl text-sm" placeholder="••••••••">
+                            </div>
+                            <button type="submit" class="w-full py-5 btn-premium text-white font-gaming font-bold rounded-2xl shadow-xl uppercase tracking-widest text-sm">Establish Connection</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Customer Dashboard -->
+        <section id="view-customer" class="view-section max-w-7xl mx-auto px-6 py-12">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
+                <div>
+                    <h2 class="font-gaming text-5xl font-black mb-2 uppercase italic">Storefront</h2>
+                    <p class="text-slate-500 font-medium">Equip your account with premium diamond packs.</p>
+                </div>
+                <div class="glass-card px-8 py-5 rounded-3xl flex items-center space-x-6 border-cyan-500/20">
+                    <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-3xl shadow-inner">💎</div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Current Credits</div>
+                        <div class="text-2xl font-black font-gaming" id="user-balance">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="diamond-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-24">
+                <!-- Diamond Items -->
+            </div>
+
+            <div class="glass-card rounded-[3rem] overflow-hidden border border-slate-800/50">
+                <div class="px-10 py-8 border-b border-slate-800/50 flex items-center justify-between">
+                    <h3 class="font-gaming text-xl font-bold italic">Transaction Logs</h3>
+                    <span class="px-4 py-1.5 rounded-full bg-slate-900 text-[10px] font-bold uppercase text-slate-400">Live Tracking</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-900/30 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                            <tr>
+                                <th class="px-10 py-5">Order ID</th>
+                                <th class="px-10 py-5">Item</th>
+                                <th class="px-10 py-5">Value</th>
+                                <th class="px-10 py-5">Status</th>
+                                <th class="px-10 py-5">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-user-orders" class="divide-y divide-slate-800/50 text-sm">
+                            <!-- User Orders -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Admin Dashboard -->
+        <section id="view-admin" class="view-section max-w-7xl mx-auto px-6 py-12">
+            <div class="flex flex-col lg:flex-row gap-10">
+                <!-- Sidebar -->
+                <div class="w-full lg:w-80 space-y-3">
+                    <h2 class="font-gaming text-2xl font-black mb-8 px-4 italic uppercase">Command Node</h2>
+                    <button onclick="setAdminTab('orders')" id="tab-adm-orders" class="adm-tab w-full px-8 py-5 rounded-3xl text-[10px] font-bold uppercase tracking-widest bg-purple-600 text-white shadow-xl transition-all">Orders Queue</button>
+                    <button onclick="setAdminTab('inventory')" id="tab-adm-inv" class="adm-tab w-full px-8 py-5 rounded-3xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-900 transition-all">Inventory Control</button>
+                    <button onclick="setAdminTab('news')" id="tab-adm-news" class="adm-tab w-full px-8 py-5 rounded-3xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-900 transition-all">Broadcasting</button>
+                    <button onclick="setAdminTab('settings')" id="tab-adm-set" class="adm-tab w-full px-8 py-5 rounded-3xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-900 transition-all">Core Protocols</button>
+                </div>
+                <!-- Main Admin Panel -->
+                <div id="admin-display" class="flex-grow glass-card rounded-[3.5rem] p-12 min-h-[600px] border border-slate-800/50">
+                    <!-- Dynamic Admin Views -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: Checkout Gateway -->
+    <div id="modal-checkout" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4">
+        <div class="max-w-4xl w-full glass-card rounded-[3.5rem] overflow-hidden flex flex-col md:flex-row shadow-2xl border-white/5">
+            <div class="flex-1 p-12 bg-slate-900/50 text-center border-r border-slate-800/50">
+                <h3 class="font-gaming text-2xl font-black mb-8 uppercase italic">Payment Node</h3>
+                <div class="p-6 bg-white rounded-[2.5rem] shadow-2xl inline-block mb-10 transform hover:scale-105 transition-transform">
+                    <img id="display-qr" class="w-56 h-56" src="">
+                </div>
+                <div class="space-y-2">
+                    <p class="text-cyan-400 font-gaming text-2xl font-black" id="display-price"></p>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Verify and Scan to Complete</p>
+                </div>
+            </div>
+            <div class="flex-1 p-12 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-gaming text-2xl font-black mb-10 uppercase italic">Validation Proof</h3>
+                    <div class="space-y-8">
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Upload Transfer Screenshot</label>
+                            <div class="relative group">
+                                <input type="file" id="input-proof" accept="image/*" class="w-full bg-slate-950 p-6 rounded-2xl border border-slate-800 text-xs text-slate-400 file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-cyan-600 file:text-white cursor-pointer">
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 leading-relaxed bg-red-500/5 p-5 rounded-2xl italic border border-red-500/10">Detection Warning: System uses AI to verify screenshots. Forged proofs will lead to immediate account termination.</p>
+                    </div>
+                </div>
+                <div class="pt-10 space-y-4">
+                    <button onclick="confirmOrder()" class="w-full py-5 bg-cyan-600 text-white font-gaming font-bold rounded-2xl shadow-xl hover:bg-cyan-500 transition-all uppercase tracking-widest text-xs">Authorize Top-Up</button>
+                    <button onclick="closeCheckout()" class="w-full text-slate-600 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors">Terminate Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SUPABASE INITIALIZATION ---
+        const SB_URL = 'https://idyhdutaczrtlhbngtse.supabase.co';
+        const SB_KEY = 'sb_publishable_JFxu-IO7gSK-t9Qm5dNCBw_Il5x5SU5';
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        let userState = null;
+        let roleState = 'customer';
+        let activePack = null;
+
+        // --- AUTH LOGIC ---
+        function switchRole(r) {
+            roleState = r;
+            document.getElementById('btn-role-cust').className = r === 'customer' ? 'flex-1 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-cyan-600 text-white shadow-lg transition-all' : 'flex-1 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-all';
+            document.getElementById('btn-role-admin').className = r === 'admin' ? 'flex-1 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-purple-600 text-white shadow-lg transition-all' : 'flex-1 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-all';
+        }
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('input-username').value;
+            const pass = document.getElementById('input-password').value;
+
+            if (roleState === 'admin') {
+                if (id === 'aashishb442@gmail.com' && pass === 'aashish@1522') {
+                    userState = { id, role: 'admin' };
+                    showView('admin');
+                } else { alert('Admin Access Denied.'); }
+            } else {
+                userState = { id, role: 'customer' };
+                showView('customer');
+            }
+            updateNavBar();
+        });
+
+        // --- NAVIGATION ---
+        function showView(v) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`view-${v}`).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            fetchData();
+        }
+
+        function scrollToLogin() { document.getElementById('login-section').scrollIntoView({ behavior: 'smooth' }); }
+
+        function updateNavBar() {
+            const nav = document.getElementById('nav-actions');
+            if (userState) {
+                nav.innerHTML = `
+                    <div class="flex items-center space-x-5">
+                        <div class="hidden md:block text-right">
+                            <div class="text-[9px] font-black text-cyan-400 uppercase tracking-[0.2em]">${userState.role}</div>
+                            <div class="text-xs font-bold text-white">${userState.id}</div>
+                        </div>
+                        <button onclick="location.reload()" class="px-5 py-2 rounded-full border border-slate-700 text-[10px] font-bold uppercase text-slate-400 hover:text-white hover:border-white transition-all">Logout</button>
+                    </div>
+                `;
+            } else {
+                nav.innerHTML = `<button onclick="scrollToLogin()" class="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-gaming text-[10px] font-bold tracking-widest rounded-full shadow-lg transition-all">LOGIN</button>`;
+            }
+        }
+
+        // --- DATA FETCHING ---
+        async function fetchData() {
+            // Fetch News
+            const { data: news } = await supabaseClient.from('news').select('*').order('created_at', { ascending: false });
+            if (news) {
+                document.getElementById('news-container').innerHTML = news.map(n => `
+                    <div class="glass-card rounded-[2.5rem] overflow-hidden group hover:border-cyan-500/50 transition-all duration-500">
+                        <div class="h-60 overflow-hidden relative">
+                            <img src="${n.image_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent opacity-60"></div>
+                        </div>
+                        <div class="p-10">
+                            <h3 class="font-gaming text-xl font-bold mb-4 uppercase italic tracking-tighter">${n.title}</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed line-clamp-3">${n.content}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Fetch Diamonds
+            const { data: dms } = await supabaseClient.from('diamonds').select('*');
+            if (dms && document.getElementById('diamond-grid')) {
+                document.getElementById('diamond-grid').innerHTML = dms.map(d => `
+                    <div onclick='initCheckout(${JSON.stringify(d)})' class="glass-card p-10 rounded-[3rem] cursor-pointer hover:border-cyan-400 transition-all text-center group">
+                        <div class="text-5xl mb-6 group-hover:scale-125 transition-transform duration-500">${d.icon || '💎'}</div>
+                        <div class="text-4xl font-black font-gaming tracking-tighter mb-1">${d.amount}</div>
+                        <div class="text-cyan-400 font-bold uppercase text-[9px] tracking-[0.2em] mb-10">+ ${d.bonus} Bonus</div>
+                        <div class="py-4 px-6 bg-slate-900 rounded-2xl text-xl font-black font-gaming text-white group-hover:bg-cyan-600 transition-colors">$${d.price}</div>
+                    </div>
+                `).join('');
+            }
+
+            // Fetch Orders
+            if (userState && userState.role === 'customer') {
+                const { data: ords } = await supabaseClient.from('orders').select('*').eq('username', userState.id).order('created_at', { ascending: false });
+                if (ords) {
+                    document.getElementById('table-user-orders').innerHTML = ords.map(o => `
+                        <tr class="hover:bg-slate-900/30 transition-colors">
+                            <td class="px-10 py-5 font-mono text-[10px] text-cyan-500">${o.id.substr(0,10)}</td>
+                            <td class="px-10 py-5 font-bold uppercase text-xs">${o.pack_name}</td>
+                            <td class="px-10 py-5 font-gaming text-xs">$${o.price}</td>
+                            <td class="px-10 py-5">
+                                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${o.status==='pending'?'bg-amber-500/10 text-amber-500':'bg-green-500/10 text-green-500'}">
+                                    ${o.status}
+                                </span>
+                            </td>
+                            <td class="px-10 py-5 text-[11px] text-slate-500">${new Date(o.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            if (userState && userState.role === 'admin') setAdminTab('orders');
+        }
+
+        // --- CHECKOUT LOGIC ---
+        async function initCheckout(pack) {
+            activePack = pack;
+            const { data } = await supabaseClient.from('settings').select('value').eq('key', 'qr_code').single();
+            document.getElementById('display-qr').src = data ? data.value : 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=NexusGaming';
+            document.getElementById('display-price').innerText = `TOTAL: $${pack.price}`;
+            document.getElementById('modal-checkout').style.display = 'flex';
+        }
+
+        function closeCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
+
+        async function confirmOrder() {
+            const proof = document.getElementById('input-proof').value;
+            if (!proof) return alert('Transaction Proof Required.');
+            
+            const { error } = await supabaseClient.from('orders').insert({
+                username: userState.id,
+                pack_name: `${activePack.amount} Diams`,
+                price: activePack.price,
+                status: 'pending'
+            });
+
+            if (!error) {
+                alert('Transfer Verified. Deployment in progress.');
+                closeCheckout();
+                fetchData();
+            }
+        }
+
+        // --- ADMIN DASHBOARD LOGIC ---
+        async function setAdminTab(tab) {
+            document.querySelectorAll('.adm-tab').forEach(b => b.className = 'adm-tab w-full px-8 py-5 rounded-3xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-900 transition-all');
+            const map = { orders: 'tab-adm-orders', inventory: 'tab-adm-inv', news: 'tab-adm-news', settings: 'tab-adm-set' };
+            document.getElementById(map[tab]).className = 'adm-tab w-full px-8 py-5 rounded-3xl text-[10px] font-bold uppercase tracking-widest bg-purple-600 text-white shadow-xl transition-all';
+            
+            const display = document.getElementById('admin-display');
+            if (tab === 'orders') {
+                const { data } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+                display.innerHTML = `
+                    <h3 class="font-gaming text-2xl font-black mb-10 italic uppercase">Operational Queue</h3>
+                    <div class="space-y-4">
+                        ${data.map(o => `
+                            <div class="p-8 bg-slate-900/40 rounded-[2.5rem] border border-slate-800 flex justify-between items-center hover:border-purple-500/40 transition-all">
+                                <div>
+                                    <div class="text-[10px] font-mono text-cyan-400 mb-2">${o.id}</div>
+                                    <div class="font-bold text-xl uppercase mb-1">${o.username}</div>
+                                    <div class="text-xs text-slate-500 font-bold uppercase tracking-widest">${o.pack_name} — $${o.price}</div>
+                                </div>
+                                <div class="flex gap-3">
+                                    ${o.status === 'pending' ? `<button onclick="admProcessOrder('${o.id}','done')" class="px-8 py-3 bg-green-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-lg">Approve</button>` : `<span class="text-[10px] font-black text-green-500 uppercase tracking-widest bg-green-500/10 px-6 py-2 rounded-full border border-green-500/20">${o.status}</span>`}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (tab === 'inventory') {
+                const { data } = await supabaseClient.from('diamonds').select('*');
+                display.innerHTML = `
+                    <div class="flex justify-between items-center mb-10">
+                        <h3 class="font-gaming text-2xl font-black italic uppercase">Asset Management</h3>
+                        <button onclick="admAddAsset()" class="bg-cyan-600 px-8 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl">+ New Asset</button>
+                    </div>
+                    <div class="grid gap-4">
+                        ${data.map(d => `
+                            <div class="p-8 bg-slate-900/40 rounded-[2.5rem] border border-slate-800 flex justify-between items-center">
+                                <div class="flex items-center gap-8">
+                                    <span class="text-4xl">${d.icon || '💎'}</span>
+                                    <div>
+                                        <div class="font-bold text-xl uppercase">${d.amount} Pack</div>
+                                        <div class="text-sm text-slate-500 font-gaming">$${d.price}</div>
+                                    </div>
+                                </div>
+                                <button onclick="admDeleteAsset('${d.id}')" class="text-red-500/60 hover:text-red-400 transition-colors uppercase text-[10px] font-bold">Destroy</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (tab === 'news') {
+                display.innerHTML = `
+                    <h3 class="font-gaming text-2xl font-black mb-10 italic uppercase">Global Broadcast</h3>
+                    <div class="space-y-6">
+                        <input id="news-title" class="w-full px-6 py-5 rounded-[1.5rem] text-sm" placeholder="Broadcast Headline">
+                        <textarea id="news-content" class="w-full px-6 py-5 rounded-[1.5rem] text-sm h-40" placeholder="Intel Content Data..."></textarea>
+                        <input id="news-image" class="w-full px-6 py-5 rounded-[1.5rem] text-sm" placeholder="Cover Asset URL">
+                        <button onclick="admPostBroadcast()" class="w-full py-5 bg-purple-600 text-white font-gaming font-bold rounded-[1.5rem] text-xs uppercase tracking-widest shadow-xl transition-all">Transmit News</button>
+                    </div>
+                `;
+            } else if (tab === 'settings') {
+                display.innerHTML = `
+                    <h3 class="font-gaming text-2xl font-black mb-10 italic uppercase">System Protocols</h3>
+                    <div class="space-y-10">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 block">Active Payment Gateway (QR URL)</label>
+                            <input id="set-qr-url" class="w-full px-6 py-5 rounded-[1.5rem] text-sm mb-4" placeholder="Image Data URI / URL">
+                            <button onclick="admUpdateProtocols()" class="px-10 py-4 bg-cyan-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl shadow-lg">Patch Settings</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Admin Helpers
+        async function admProcessOrder(id, s) { await supabaseClient.from('orders').update({ status: s }).eq('id', id); setAdminTab('orders'); }
+        async function admPostBroadcast() {
+            const title = document.getElementById('news-title').value;
+            const content = document.getElementById('news-content').value;
+            const image_url = document.getElementById('news-image').value;
+            await supabaseClient.from('news').insert({ title, content, image_url });
+            alert('Broadcasting Globally...'); setAdminTab('news');
+        }
+        async function admUpdateProtocols() {
+            const val = document.getElementById('set-qr-url').value;
+            await supabaseClient.from('settings').update({ value: val }).eq('key', 'qr_code');
+            alert('Protocols Overridden.');
+        }
+        async function admAddAsset() {
+            const amount = prompt('Diamond Value:');
+            const price = prompt('Cost ($):');
+            if (amount && price) {
+                await supabaseClient.from('diamonds').insert({ amount, price, bonus: Math.floor(amount * 0.1) });
+                setAdminTab('inventory');
+            }
+        }
+        async function admDeleteAsset(id) {
+            if (confirm('Erase selected asset from store?')) {
+                await supabaseClient.from('diamonds').delete().eq('id', id);
+                setAdminTab('inventory');
+            }
+        }
+
+        // Initialize App
+        showView('landing');
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
